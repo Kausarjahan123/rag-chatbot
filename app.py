@@ -62,7 +62,12 @@ def load_pdf(file):
     text = ""
 
     for page in reader.pages:
-        text += page.extract_text() or ""
+        page_text = page.extract_text() or ""
+        text += page_text + " "
+
+    # CLEAN TEXT (VERY IMPORTANT FIX)
+    text = text.replace("\n", " ")
+    text = " ".join(text.split())   # removes weird spacing
 
     return text
 
