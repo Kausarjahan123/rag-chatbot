@@ -15,7 +15,7 @@ st.title("AI Python Notes Chatbot")
 # -----------------------------
 # LOAD PDF
 # -----------------------------
-pdf_path = "sample_docs/python_notes.pdf"
+pdf_path = "pdf_path = "python_notes.pdf""
 
 def load_pdf_text(path):
     reader = PdfReader(path)
