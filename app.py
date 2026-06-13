@@ -3,6 +3,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 import faiss
 from pypdf import PdfReader
+import os
 
 # -----------------------------
 # MODEL
@@ -13,10 +14,18 @@ st.set_page_config(page_title="AI RAG Chatbot", layout="wide")
 st.title("AI Python Notes Chatbot")
 
 # -----------------------------
+# PDF PATH (FIXED)
+# -----------------------------
+pdf_path = "Python.pdf"
+
+# safety check (IMPORTANT)
+if not os.path.exists(pdf_path):
+    st.error(f"File not found: {pdf_path}. Please check filename in GitHub.")
+    st.stop()
+
+# -----------------------------
 # LOAD PDF
 # -----------------------------
-pdf_path = "python_notes.pdf"
-
 def load_pdf_text(path):
     reader = PdfReader(path)
     text = ""
