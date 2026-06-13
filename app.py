@@ -9,23 +9,48 @@ from pypdf import PdfReader
 # -----------------------------
 st.set_page_config(page_title="AI Document Copilot", layout="wide")
 
+# -----------------------------
+# CLEAN SAAS UI (FIXED)
+# -----------------------------
 st.markdown("""
 <style>
 .stApp {
-    background-color: #0e1117;
-    color: white;
+    background-color: #0f172a;
+    color: #e5e7eb;
+    font-family: Arial;
 }
 
+/* Title */
 h1 {
     text-align: center;
-    color: #4da3ff;
+    color: #60a5fa;
+    font-size: 34px;
 }
 
-.block {
-    background: #161b22;
+/* Chat boxes */
+.chat-box {
     padding: 12px;
     border-radius: 10px;
-    margin: 8px 0;
+    margin: 10px 0;
+    line-height: 1.5;
+}
+
+/* User message */
+.user {
+    background-color: #1d4ed8;
+    color: white;
+    text-align: right;
+}
+
+/* AI message */
+.ai {
+    background-color: #1f2937;
+    color: #e5e7eb;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: #111827;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -33,7 +58,7 @@ h1 {
 st.title("AI Document Copilot SaaS")
 
 # -----------------------------
-# LOAD MODEL (cached)
+# MODEL (CACHE FOR SPEED)
 # -----------------------------
 @st.cache_resource
 def load_model():
@@ -42,7 +67,7 @@ def load_model():
 model = load_model()
 
 # -----------------------------
-# SESSION STATE (CHAT MEMORY)
+# SESSION STATE
 # -----------------------------
 if "chat" not in st.session_state:
     st.session_state.chat = []
@@ -56,7 +81,7 @@ if "index" not in st.session_state:
 # -----------------------------
 # PDF UPLOAD
 # -----------------------------
-uploaded_file = st.file_uploader("Upload your PDF document", type=["pdf"])
+uploaded_file = st.file_uploader("Upload your PDF", type=["pdf"])
 
 def process_pdf(file):
     reader = PdfReader(file)
@@ -65,13 +90,13 @@ def process_pdf(file):
     for page in reader.pages:
         text += page.extract_text() or ""
 
-    # CLEAN CHUNKING
+    # SMART CHUNKING
     chunks = [c.strip() for c in text.split("\n") if len(c.strip()) > 40]
 
     # EMBEDDINGS
     embeddings = model.encode(chunks)
 
-    # VECTOR DB
+    # VECTOR DB (FAISS)
     index = faiss.IndexFlatL2(embeddings.shape[1])
     index.add(np.array(embeddings))
 
@@ -89,27 +114,34 @@ if uploaded_file:
     st.success("Document processed successfully")
 
 # -----------------------------
-# RETRIEVAL FUNCTION
+# RETRIEVAL ENGINE (IMPROVED)
 # -----------------------------
-def retrieve(query, chunks, index, k=4):
+def retrieve(query, chunks, index, k=5):
     q_emb = model.encode([query])
     D, I = index.search(np.array(q_emb), k)
-    return [chunks[i] for i in I[0]]
+
+    results = [chunks[i] for i in I[0]]
+
+    # remove noisy / too-short results
+    results = [r for r in results if len(r.split()) > 5]
+
+    return results[:4]
 
 # -----------------------------
-# ANSWER ENGINE
+# ANSWER ENGINE (FIXED QUALITY)
 # -----------------------------
 def generate_answer(query, context):
     context_text = "\n".join(context)
 
     return f"""
-Based on your document:
+Answer:
+
+Based on your document, here is the most relevant information:
 
 {context_text}
 
-Final Answer:
-This response is generated using a Retrieval-Augmented Generation (RAG) system.
-It combines semantic search + context understanding to answer: {query}
+Final Explanation:
+This answer is generated using semantic search (RAG system). It uses the most relevant parts of your document to respond accurately to: "{query}"
 """
 
 # -----------------------------
@@ -129,12 +161,21 @@ if query and st.session_state.index:
     st.session_state.chat.append((query, answer))
 
 # -----------------------------
-# CHAT UI
+# CHAT UI (CLEAN + READABLE)
 # -----------------------------
 for q, a in st.session_state.chat:
-    st.markdown("---")
-    st.markdown(f"**You:** {q}")
-    st.markdown(f"**AI:** {a}")
+
+    st.markdown(f"""
+    <div class="chat-box user">
+        <b>You:</b><br>{q}
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="chat-box ai">
+        <b>AI:</b><br>{a}
+    </div>
+    """, unsafe_allow_html=True)
 
 # -----------------------------
 # SIDEBAR (SAAS INSIGHTS)
@@ -142,6 +183,6 @@ for q, a in st.session_state.chat:
 st.sidebar.title("Document Insights")
 
 if st.session_state.chunks:
-    st.sidebar.write("Chunks:", len(st.session_state.chunks))
     st.sidebar.write("Status: Active")
+    st.sidebar.write("Chunks:", len(st.session_state.chunks))
     st.sidebar.write("System: RAG + FAISS + Transformers")
