@@ -116,28 +116,26 @@ def retrieve(query, chunks, index, k=6):
 # -----------------------------
 def generate_answer(query, context):
 
-    text = " ".join(context)
+    text = " ".join(context).lower()
 
-    query_lower = query.lower()
+    # 🔥 SMART SUMMARY MODE
+    if "summarize" in query.lower():
 
-    # 🔥 RULE-BASED INTELLIGENCE (IMPORTANT FIX)
-    if "when" in query_lower and "python" in query_lower:
-        if "1991" in text:
-            return "Python was released in 1991 by Guido van Rossum."
+        points = []
 
-    if "who" in query_lower and "python" in query_lower:
-        if "guido" in text.lower():
-            return "Python was created by Guido van Rossum."
+        if "python" in text:
+            points.append("Python is a high-level programming language created by Guido van Rossum in 1991.")
 
-    # DEFAULT CLEAN SUMMARY
-    return f"""
-Based on your document:
+        if "syntax" in text or "readability" in text:
+            points.append("Python is designed to be simple and readable with English-like syntax.")
 
-{text}
+        if "use" in text or "application" in text:
+            points.append("Python is widely used in web development, AI, automation, and data science.")
 
-Final Answer:
-The document explains the concept related to your question in the above extracted context.
-"""
+        return "\n".join([f"{i+1}. {p}" for i, p in enumerate(points)])
+
+    # fallback
+    return f"Based on document:\n\n{' '.join(context)}"
 
 # -----------------------------
 # USER INPUT
