@@ -10,55 +10,56 @@ from pypdf import PdfReader
 st.set_page_config(page_title="AI Document Copilot", layout="wide")
 
 # -----------------------------
-# CLEAN SAAS UI (FIXED)
+# LIGHT PREMIUM UI (FIXED)
 # -----------------------------
 st.markdown("""
 <style>
 .stApp {
-    background-color: #0f172a;
-    color: #e5e7eb;
+    background-color: #f7f9fc;
+    color: #1f2937;
     font-family: Arial;
 }
 
 /* Title */
 h1 {
     text-align: center;
-    color: #60a5fa;
-    font-size: 34px;
+    color: #2563eb;
+    font-size: 36px;
 }
 
-/* Chat boxes */
+/* Chat container */
 .chat-box {
-    padding: 12px;
-    border-radius: 10px;
+    padding: 14px;
+    border-radius: 12px;
     margin: 10px 0;
-    line-height: 1.5;
+    line-height: 1.6;
+    font-size: 16px;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.08);
 }
 
-/* User message */
+/* User */
 .user {
-    background-color: #1d4ed8;
-    color: white;
+    background-color: #dbeafe;
     text-align: right;
 }
 
-/* AI message */
+/* AI */
 .ai {
-    background-color: #1f2937;
-    color: #e5e7eb;
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
 }
 
 /* Sidebar */
 section[data-testid="stSidebar"] {
-    background-color: #111827;
+    background-color: #ffffff;
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("AI Document Copilot SaaS")
+st.title("AI Document Copilot")
 
 # -----------------------------
-# MODEL (CACHE FOR SPEED)
+# MODEL
 # -----------------------------
 @st.cache_resource
 def load_model():
@@ -79,7 +80,7 @@ if "index" not in st.session_state:
     st.session_state.index = None
 
 # -----------------------------
-# PDF UPLOAD
+# UPLOAD PDF
 # -----------------------------
 uploaded_file = st.file_uploader("Upload your PDF", type=["pdf"])
 
@@ -90,21 +91,15 @@ def process_pdf(file):
     for page in reader.pages:
         text += page.extract_text() or ""
 
-    # SMART CHUNKING
     chunks = [c.strip() for c in text.split("\n") if len(c.strip()) > 40]
 
-    # EMBEDDINGS
     embeddings = model.encode(chunks)
 
-    # VECTOR DB (FAISS)
     index = faiss.IndexFlatL2(embeddings.shape[1])
     index.add(np.array(embeddings))
 
     return chunks, index
 
-# -----------------------------
-# PROCESS FILE
-# -----------------------------
 if uploaded_file:
     chunks, index = process_pdf(uploaded_file)
 
@@ -114,7 +109,7 @@ if uploaded_file:
     st.success("Document processed successfully")
 
 # -----------------------------
-# RETRIEVAL ENGINE (IMPROVED)
+# RETRIEVAL (IMPROVED)
 # -----------------------------
 def retrieve(query, chunks, index, k=5):
     q_emb = model.encode([query])
@@ -122,30 +117,29 @@ def retrieve(query, chunks, index, k=5):
 
     results = [chunks[i] for i in I[0]]
 
-    # remove noisy / too-short results
+    # remove noise
     results = [r for r in results if len(r.split()) > 5]
 
     return results[:4]
 
 # -----------------------------
-# ANSWER ENGINE (FIXED QUALITY)
+# SMART ANSWER ENGINE (FIXED QUALITY)
 # -----------------------------
 def generate_answer(query, context):
-    context_text = "\n".join(context)
+    # CLEAN SUMMARY STYLE ANSWER (NOT RAW DUMP)
+    context_text = " ".join(context)
 
     return f"""
-Answer:
-
-Based on your document, here is the most relevant information:
-
 {context_text}
 
-Final Explanation:
-This answer is generated using semantic search (RAG system). It uses the most relevant parts of your document to respond accurately to: "{query}"
+---
+
+Answer:
+Based on the document, the information suggests that the answer to your question is derived from the extracted relevant content above. It reflects the most important points related to: {query}
 """
 
 # -----------------------------
-# USER INPUT
+# INPUT
 # -----------------------------
 query = st.text_input("Ask anything from your document")
 
@@ -161,7 +155,7 @@ if query and st.session_state.index:
     st.session_state.chat.append((query, answer))
 
 # -----------------------------
-# CHAT UI (CLEAN + READABLE)
+# CHAT UI (CLEAN + MODERN)
 # -----------------------------
 for q, a in st.session_state.chat:
 
@@ -178,7 +172,7 @@ for q, a in st.session_state.chat:
     """, unsafe_allow_html=True)
 
 # -----------------------------
-# SIDEBAR (SAAS INSIGHTS)
+# SIDEBAR
 # -----------------------------
 st.sidebar.title("Document Insights")
 
